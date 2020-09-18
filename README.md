@@ -126,6 +126,14 @@ File: File1.pdf Using page: 13493 (rotation: 0 deg.)
 52356/52358 :: def write: for objIndex in range(len(self._objects)): 
 52357/52358 :: def write: for objIndex in range(len(self._objects)): 
 ...
+10000 :self.gauranga: def _sweepIndirectReferences(self, externMap, data)
+20000 :self.gauranga: def _sweepIndirectReferences(self, externMap, data)
+30000 :self.gauranga: def _sweepIndirectReferences(self, externMap, data)
+40000 :self.gauranga: def _sweepIndirectReferences(self, externMap, data)
+50000 :self.gauranga: def _sweepIndirectReferences(self, externMap, data)
+60000 :self.gauranga: def _sweepIndirectReferences(self, externMap, data)
+70000 :self.gauranga: def _sweepIndirectReferences(self, externMap, data)
+....
 47000 / 52358for i in range(len(self._objects)):: 
 48000 / 52358for i in range(len(self._objects)):: 
 49000 / 52358for i in range(len(self._objects)):: 
