@@ -144,6 +144,75 @@ File: File1.pdf Using page: 13493 (rotation: 0 deg.)
 
 ```
 
+# Changes in source code of PyPDF2 for python3:
+
+`/usr/lib/python3.7/site-packages/PyPDF2/pdf.py`
+```python
+    def addBookmark(self, title, pagenum, parent=None, color=None, bold=False, italic=False, fit='/Fit', *args):
+        #----------ADD PRINT---------------------------
+        print(str(pagenum)+" :: pagenum :: def addBookmark")
+        #--------------------------------------------
+        pageRef = self.getObject(self._pages)['/Kids'][pagenum]
+        action = DictionaryObject()
+        zoomArgs = []
+        for a in args:
+```
+
+```python
+    def _sweepIndirectReferences(self, externMap, data):
+        self.gauranga = self.gauranga + 1
+        if self.gauranga % 10000 == 0:
+            print(str(self.gauranga)+" : def _sweepIndirectReferences(self, externMap, data)")
+        debug = False
+```
+
+```python
+        for objIndex in range(len(self._objects)):
+            obj = self._objects[objIndex]
+            #-----------CHANGED---------------------------------------
+            print(str(objIndex)+"/"+str(len(self._objects))+" :: def write: for objIndex in range(len(self._objects)): ")
+            #----------------------------------------------------------
+            if isinstance(obj, PageObject) and obj.indirectRef != None:
+                data = obj.indirectRef
+                if data.pdf not in externalReferenceMap:
+                    externalReferenceMap[data.pdf] = {}
+                if data.generation not in externalReferenceMap[data.pdf]:
+                    externalReferenceMap[data.pdf][data.generation] = {}
+                externalReferenceMap[data.pdf][data.generation][data.idnum] = IndirectObject(objIndex + 1, 0, self)
+
+        self.stack = []
+        if debug: print(("ERM:", externalReferenceMap, "root:", self._root))
+        #-----------CHANGED---------------------------------------
+        self.gauranga = 0
+        self._sweepIndirectReferences(externalReferenceMap, self._root)
+        self.gauranga = 0
+        #----------------------------------------------------------
+        del self.stack
+
+        # Begin writing:
+        object_positions = []
+        stream.write(self._header + b_("\n"))
+        for i in range(len(self._objects)):
+            idnum = (i + 1)
+            obj = self._objects[i]
+            object_positions.append(stream.tell())
+            stream.write(b_(str(idnum) + " 0 obj\n"))
+            key = None
+            if hasattr(self, "_encrypt") and idnum != self._encrypt.idnum:
+                pack1 = struct.pack("<i", i + 1)[:3]
+                pack2 = struct.pack("<i", 0)[:2]
+                key = self._encrypt_key + pack1 + pack2
+                assert len(key) == (len(self._encrypt_key) + 5)
+                md5_hash = md5(key).digest()
+                key = md5_hash[:min(16, len(self._encrypt_key) + 5)]
+            obj.writeToStream(stream, key)
+            #-----------CHANGED---------------------------------------
+            if i % 1000 == 0:
+                print(str(i)+" / "+str(len(self._objects))+"def write: for i in range(len(self._objects)):: ")
+            #---------------------------------------------------
+            stream.write(b_("\nendobj\n"))
+```
+
 # IMPORT AND EXPORT TOC FOR LARGE PDFS
 
 **Requirement**
@@ -164,7 +233,7 @@ We will use mupdf to get the large pdfs TOC or to combine multiple pdfs toc
 
 ## Extract large pdfs TOC
 
-### Use mupdf to get into the flatten format**
+### STEP1: Use mupdf to get into the flatten format**
 So we will use mupdf's fitz library for this
 Install mupdf using AUR
 
@@ -202,7 +271,7 @@ print(new_format)
 ```
 
 
-### Convert toc from flatten format to the format of PyPDF2 (i.e nested array)
+### STEP2: Convert toc from flatten format to the format of PyPDF2 (i.e nested array)
 
 ```
 [
@@ -326,3 +395,117 @@ for i in range(toclen):
 import json
 print("nested_array == "+json.dumps(nested_array, indent=4, sort_keys=True, default=str))
 ```
+
+### STEP3: import the bookmars from nested_array
+
+```python
+### PART3 IMPORTING THE BOOKMARKS
+
+from PyPDF2 import PdfFileWriter, PdfFileReader
+
+output = PdfFileWriter()
+input1 = PdfFileReader(open(filename, 'rb'))
+
+for pageno in range(input1.getNumPages()):
+    print("(Using page: "+str(pageno+1)+")")
+    output.addPage(input1.getPage(pageno-1))
+
+def _write_bookmarks(bookmarks=None, parent=None):
+    last_added = None
+    for b in bookmarks:
+        if isinstance(b, list):
+            _write_bookmarks(b, last_added)
+            continue
+        last_added = output.addBookmark(b["/Title"], b["/Page"]-1,parent)
+
+_write_bookmarks(nested_array)
+
+# get filename from filename.pdf
+# os.path.splitext(filename)[0]
+
+#get .pdf from filename.pdf
+# os.path.splitext(filename)[1]
+
+import os
+outputfile = open(os.path.splitext(filename)[0]+"_indexed"+os.path.splitext(filename)[1], 'wb')
+output.write(outputfile)
+```
+
+**COMBINED**
+```
+import fitz
+filename="Adi_index.pdf"
+doc = fitz.open(filename)  # open file
+toc_mu = doc.getToC(False) # its table of contents (list)
+# [ [level,Title,Pagenum],[level,Title,Pagenum] .....]
+pc = len(doc)  # number of its pages
+
+new_format=[]
+for line in toc_mu:  # read toc 
+    new_format.append({"/Page": line[2],"/Title": line[1],"/Type": "/Fit","level": line[0]})
+
+print(new_format)
+
+### PART2 CONVERT FLATTEN TOC FROM MUPDF TO NESTED FORMAR OF PYPDF2
+toc = new_format.copy()
+
+toclen = len(toc)
+
+nested_array=[]
+for i in range(toclen):
+    o = toc[i]
+    n=toc[i]["level"]
+    #print("n=toc[i][\"level\"]:: i,n ::"+str(i)+","+str(n))
+    index=""
+    arr1 = None
+    for j in range(0,n):
+        #print("i,j ::::"+str(i)+","+str(j))
+        if arr1 is None:
+            arr1 = nested_array
+        else:
+            len_arr1 = len(arr1)
+            if isinstance(arr1[len_arr1-1], list):
+                arr1=arr1[len_arr1-1]
+            else:
+                arr1.append([])
+                len_arr1 = len(arr1)
+                arr1=arr1[len_arr1-1]
+    arr1.append(o)
+
+import json
+print("nested_array == "+json.dumps(nested_array, indent=4, sort_keys=True, default=str))
+
+
+### PART3 IMPORTING THE BOOKMARKS
+
+from PyPDF2 import PdfFileWriter, PdfFileReader
+
+output = PdfFileWriter()
+input1 = PdfFileReader(open(filename, 'rb'))
+
+for pageno in range(input1.getNumPages()):
+    print("(Using page: "+str(pageno+1)+")")
+    output.addPage(input1.getPage(pageno-1))
+
+def _write_bookmarks(bookmarks=None, parent=None):
+    last_added = None
+    for b in bookmarks:
+        if isinstance(b, list):
+            _write_bookmarks(b, last_added)
+            continue
+        last_added = output.addBookmark(b["/Title"], b["/Page"]-1,parent)
+
+_write_bookmarks(nested_array)
+
+# get filename from filename.pdf
+# os.path.splitext(filename)[0]
+
+#get .pdf from filename.pdf
+# os.path.splitext(filename)[1]
+
+import os
+outputfile = open(os.path.splitext(filename)[0]+"_indexed"+os.path.splitext(filename)[1], 'wb')
+output.write(outputfile)
+```
+
+
