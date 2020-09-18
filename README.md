@@ -285,7 +285,7 @@ Combining with mupdf code:
 
 ```python
 import fitz
-filename="Adi_index.pdf"
+filename="verylargefile.pdf"
 doc = fitz.open(filename)  # open file
 toc_mu = doc.getToC(False) # its table of contents (list)
 # [ [level,Title,Pagenum],[level,Title,Pagenum] .....]
