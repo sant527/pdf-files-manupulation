@@ -1,3 +1,20 @@
+   * [COMBINE LARGE PDFS USING STAPLER](#combine-large-pdfs-using-stapler)
+      * [Customize Stapler to be more verbose while combine large pdfs](#customize-stapler-to-be-more-verbose-while-combine-large-pdfs)
+         * [MODIFY SOURCE CODE OF STAPLER**](#modify-source-code-of-stapler)
+         * [MODIFY SOURCE CODE OF PyPDF2 python2**](#modify-source-code-of-pypdf2-python2)
+         * [AFTER CHANGES THE OUTPUT OF STAPLER WILL BE**](#after-changes-the-output-of-stapler-will-be)
+   * [Changes in source code of PyPDF2 for python3 for output to be more verbose:](#changes-in-source-code-of-pypdf2-for-python3-for-output-to-be-more-verbose)
+   * [IMPORT AND EXPORT TOC FOR LARGE PDFS](#import-and-export-toc-for-large-pdfs)
+      * [pdftk fails](#pdftk-fails)
+      * [STEP1: Extract the bookmarks of large pdf](#step1-extract-the-bookmarks-of-large-pdf)
+         * [STEP1A: Use mupdf to get into the flatten format**](#step1a-use-mupdf-to-get-into-the-flatten-format)
+         * [STEP1B: Convert toc from flatten format to the format of PyPDF2 (i.e nested array)](#step1b-convert-toc-from-flatten-format-to-the-format-of-pypdf2-ie-nested-array)
+      * [STEP2: IMPORT/PUT the bookmars from nested_array into the pdf](#step2-importput-the-bookmars-from-nested_array-into-the-pdf)
+   * [Combining toc of multiple pdfs](#combining-toc-of-multiple-pdfs)
+      * [STEP1: Combine the pdfs using stapler**](#step1-combine-the-pdfs-using-stapler)
+      * [STEP2: Get the combined nested toc/outline python array**](#step2-get-the-combined-nested-tocoutline-python-array)
+      * [STEP3: Using Combined.pdf and Total nested array of outline create Combined.pdf with toc**](#step3-using-combinedpdf-and-total-nested-array-of-outline-create-combinedpdf-with-toc)
+
 # COMBINE LARGE PDFS USING STAPLER
 ## Customize Stapler to be more verbose while combine large pdfs
 
@@ -12,7 +29,7 @@ So use `--verbose`
 
 But `--verbose is not just sufficient` we want to see more indication whats happening. So do the following changes in the following files
 
-**MODIFY SOURCE CODE OF STAPLER**
+### MODIFY SOURCE CODE OF STAPLER**
 
 `/usr/lib/python2.7/site-packages/staplelib/commands.py`
 ```python
@@ -41,7 +58,7 @@ def select(args, inverse=False):
                         pageno, input['name']))
     #--------------------------------------------
 ```
-**MODIFY SOURCE CODE OF PyPDF2 python2**
+### MODIFY SOURCE CODE OF PyPDF2 python2**
 
 Stapler uses python 2 libraries
 
@@ -124,7 +141,7 @@ Type "help", "copyright", "credits" or "license" for more information.
         if debug: print((data, "TYPE", data.__class__.__name__))
 ```
 
-**AFTER CHANGES THE OUTPUT WILL BE**
+### AFTER CHANGES THE OUTPUT OF STAPLER WILL BE**
 ```bash
 # stapler --verbose cat File1.pdf File2.pdf File3.pdf File4.pdf ALL.pdf
 File: File1.pdf Using page: 13489 (rotation: 0 deg.)
@@ -158,7 +175,19 @@ File: File1.pdf Using page: 13493 (rotation: 0 deg.)
 
 ```
 
-# Changes in source code of PyPDF2 for python3:
+# Changes in source code of PyPDF2 for python3 for output to be more verbose:
+
+generally Py2PDF library is used as
+
+```python
+from PyPDF2 import PdfFileWriter, PdfFileReader
+output = PdfFileWriter()
+# .. do some filreading and adding pages and bookmarks to output
+outputfile = open(outputfile.pdf, 'wb')
+output.write(outputfile)
+```
+
+we want to see the output.write to be more verbose
 
 Note: We have done changes in PyPDF of python2 i.e at '/usr/lib/python2.7/site-packages/PyPDF2/__init__.py'
 
@@ -264,9 +293,9 @@ We will use mupdf to get the large pdfs TOC or to combine multiple pdfs toc
 
 ***Note***: For small pdfs use pdftk only no need for the below procedure
 
-## Extract large pdfs TOC
+## STEP1: Extract the bookmarks of large pdf
 
-### STEP1: Use mupdf to get into the flatten format**
+### STEP1A: Use mupdf to get into the flatten format**
 So we will use mupdf's fitz library for this
 Install mupdf using AUR
 
@@ -304,7 +333,7 @@ print(new_format)
 ```
 
 
-### STEP2: Convert toc from flatten format to the format of PyPDF2 (i.e nested array)
+### STEP1B: Convert toc from flatten format to the format of PyPDF2 (i.e nested array)
 
 We want to convert the mupdf toc output the below nested array output
 ```
@@ -430,7 +459,7 @@ import json
 print("nested_array == "+json.dumps(nested_array, indent=4, sort_keys=True, default=str))
 ```
 
-### STEP3: import the bookmars from nested_array
+## STEP2: IMPORT/PUT the bookmars from nested_array into the pdf
 
 ```python
 ### PART3 IMPORTING THE BOOKMARKS
@@ -551,13 +580,13 @@ Example we have `File1.pdf`, `File1.pdf`, `File3.pdf` and `File4.pdf`
 
 Now we want a `Combined.pdf` with the `toc/outline` also combined
 
-**STEP1: Combine the pdfs using stapler**
+## STEP1: Combine the pdfs using stapler**
 
 ```bash
 # stapler --verbose cat File1.pdf File2.pdf File3.pdf File4.pdf Combined.pdf
 ```
 
-**STEP2: Get the combined nested toc/outline python array**
+## STEP2: Get the combined nested toc/outline python array**
 
 ```python
 import fitz
@@ -612,7 +641,7 @@ import json
 print("nested_array == "+json.dumps(nested_array, indent=4, sort_keys=True, default=str))
 ```
 
-**STEP3: Using Combined.pdf and Total nested array of outline create Combined.pdf with toc**
+## STEP3: Using Combined.pdf and Total nested array of outline create Combined.pdf with toc**
 
 ```
 from PyPDF2 import PdfFileWriter, PdfFileReader
