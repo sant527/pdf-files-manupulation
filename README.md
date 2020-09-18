@@ -12,6 +12,7 @@ So use `--verbose`
 But `--verbose is not just sufficient` we want to see more indication whats happening. So do the following changes in the following files
 
 **MODIFY SOURCE CODE OF STAPLER**
+
 `/usr/lib/python2.7/site-packages/staplelib/commands.py`
 ```python
 def select(args, inverse=False):
