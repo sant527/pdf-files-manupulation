@@ -1,4 +1,5 @@
-# Customize Stapler to be more verbose while combine large pdfs
+# COMBINE LARGE PDFS USING STAPLER
+## Customize Stapler to be more verbose while combine large pdfs
 
 Stapler uses python2
 
@@ -141,4 +142,187 @@ File: File1.pdf Using page: 13493 (rotation: 0 deg.)
 51000 / 52358for i in range(len(self._objects)):: 
 52000 / 52358for i in range(len(self._objects)):: 
 
+```
+
+# IMPORT AND EXPORT TOC FOR LARGE PDFS
+
+**Requirement**
+We have PDF of 1.8 lakh pages and with toc/outlines of 50k entries. we want to extract the toc, do some changes and again import them back into the pdf
+
+## pdftk fails
+Tried to do this with pdftk it keeps failing saying increase GC_MAXIMUM_HEAP_SIZE/MAX_HEAP_SECTS
+I tried with
+```
+# export GC_MAXIMUM_HEAP_SIZE=$(( 150 * (1024) * (1024) * (1024) ))
+# export MAX_HEAP_SECTS=$(( 100 * (1024) * (1024) * (1024) ))
+# pdftk verylarge.pdf dump_data output all_toc.txt
+Too many heap sections: Increase MAXHINCR or MAX_HEAP_SECTS
+```
+We will use mupdf to get the large pdfs TOC or to combine multiple pdfs toc
+
+***Note***: For small pdfs use pdftk only no need for the below procedure
+
+## Extract large pdfs TOC
+
+### Use mupdf to get into the flatten format**
+So we will use mupdf's fitz library for this
+Install mupdf using AUR
+
+Using mupdf we will get the toc in the format
+```
+hare = [
+    {"/Page": "0","/Title": "title000","/Type": "/Fit","level": 1},
+    {"/Page": "0","/Title": "title000","/Type": "/Fit","level": 1},
+    {"/Page": "1","/Title": "title001","/Type": "/Fit","level": 2},
+    {"/Page": "3","/Title": "title008","/Type": "/Fit","level": 3},
+    {"/Page": "6","/Title": "title006","/Type": "/Fit","level": 4},
+    {"/Page": "2","/Title": "title002","/Type": "/Fit","level": 2},
+    {"/Page": "3","/Title": "title008","/Type": "/Fit","level": 3},
+    {"/Page": "6","/Title": "title006","/Type": "/Fit","level": 4},
+    {"/Page": "7","/Title": "title007","/Type": "/Fit","level": 4},
+    {"/Page": "0","/Title": "title000","/Type": "/Fit","level": 1},
+    {"/Page": "1","/Title": "title001","/Type": "/Fit","level": 2},
+    {"/Page": "2","/Title": "title002","/Type": "/Fit","level": 2}
+]
+```
+
+```python
+import fitz
+filename="verylarge.pdf"
+doc = fitz.open(filename)  # open file
+toc = doc.getToC(False) # its table of contents (list)
+# [ [level,Title,Pagenum],[level,Title,Pagenum] .....]
+pc = len(doc)  # number of its pages
+
+new_format=[]
+for line in toc:  # read toc 
+    new_format.append({"/Page": line[2],"/Title": line[1],"/Type": "/Fit","level": line[0]})
+
+print(new_format)
+```
+
+
+### Convert toc from flatten format to the format of PyPDF2 (i.e nested array)
+
+```
+[
+    {
+        "/Page": "0",
+        "/Title": "title000",
+        "/Type": "/Fit"
+    },
+    {
+        "/Page": "0",
+        "/Title": "title000",
+        "/Type": "/Fit"
+    },
+    [
+        {
+            "/Page": "1",
+            "/Title": "title001",
+            "/Type": "/Fit"
+        },
+        [
+            {
+                "/Page": "3",
+                "/Title": "title008",
+                "/Type": "/Fit"
+            },
+            [
+                {
+                    "/Page": "6",
+                    "/Title": "title006",
+                    "/Type": "/Fit"
+                }
+            ]
+        ],
+        {
+            "/Page": "2",
+            "/Title": "title002",
+            "/Type": "/Fit"
+        },
+        [
+            {
+                "/Page": "3",
+                "/Title": "title008",
+                "/Type": "/Fit"
+            },
+            [
+                {
+                    "/Page": "6",
+                    "/Title": "title006",
+                    "/Type": "/Fit"
+                },
+                {
+                    "/Page": "7",
+                    "/Title": "title007",
+                    "/Type": "/Fit"
+                }
+            ]
+        ]
+    ],
+    {
+        "/Page": "0",
+        "/Title": "title000",
+        "/Type": "/Fit"
+    },
+    [
+        {
+            "/Page": "1",
+            "/Title": "title001",
+            "/Type": "/Fit"
+        },
+        {
+            "/Page": "2",
+            "/Title": "title002",
+            "/Type": "/Fit"
+        }
+    ]
+]
+```
+
+Combining with mupdf code:
+
+```python
+import fitz
+filename="Adi_index.pdf"
+doc = fitz.open(filename)  # open file
+toc_mu = doc.getToC(False) # its table of contents (list)
+# [ [level,Title,Pagenum],[level,Title,Pagenum] .....]
+pc = len(doc)  # number of its pages
+
+new_format=[]
+for line in toc_mu:  # read toc 
+    new_format.append({"/Page": line[2],"/Title": line[1],"/Type": "/Fit","level": line[0]})
+
+print(new_format)
+
+### PART2 CONVERT FLATTEN TOC FROM MUPDF TO NESTED FORMAR OF PYPDF2
+toc = new_format.copy()
+
+toclen = len(toc)
+
+nested_array=[]
+for i in range(toclen):
+    o = toc[i]
+    n=toc[i]["level"]
+    #print("n=toc[i][\"level\"]:: i,n ::"+str(i)+","+str(n))
+    index=""
+    arr1 = None
+    for j in range(0,n):
+        #print("i,j ::::"+str(i)+","+str(j))
+        if arr1 is None:
+            arr1 = nested_array
+        else:
+            len_arr1 = len(arr1)
+            if isinstance(arr1[len_arr1-1], list):
+                arr1=arr1[len_arr1-1]
+            else:
+                arr1.append([])
+                len_arr1 = len(arr1)
+                arr1=arr1[len_arr1-1]
+    arr1.append(o)
+
+import json
+print("nested_array == "+json.dumps(nested_array, indent=4, sort_keys=True, default=str))
 ```
