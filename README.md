@@ -542,4 +542,107 @@ outputfile = open(os.path.splitext(filename)[0]+"_indexed"+os.path.splitext(file
 output.write(outputfile)
 ```
 
+# Combining toc of multiple pdfs
 
+Use pdftk for small pdfs but for large pdfs of 1,00,000+ pages and 50k+ outlines use the below procedure
+
+**GOAL**
+Example we have `File1.pdf`, `File1.pdf`, `File3.pdf` and `File4.pdf`
+
+Now we want a `Combined.pdf` with the `toc/outline` also combined
+
+**STEP1: Combine the pdfs using stapler**
+
+```bash
+# stapler --verbose cat File1.pdf File2.pdf File3.pdf File4.pdf Combined.pdf
+```
+
+**STEP2: Get the combined nested toc/outline python array**
+
+```python
+import fitz
+# STEP A: GET THE FLATTENED TOTAL OUTLINES
+fileslist=[
+    "File1.pdf",
+    "File2.pdf",
+    "File3.pdf",
+    "File4.pdf",
+]
+
+outlines=[]
+total_pages=0
+for i in range(len(fileslist))
+    doc = fitz.open(fileslist[i])  # open file
+    outlines = outlines + doc.getToC(False)
+    total_pages = total_pages + len(doc)
+
+new_format=[]
+for line in outlines:  # read toc 
+    new_format.append({"/Page": outlines[2],"/Title": outlines[1],"/Type": "/Fit","level": outlines[0]})
+
+print(new_format)
+
+# STEP B: CONVERT FLATTEN TOC FROM MUPDF TO NESTED FORMAR OF PYPDF2
+toc = new_format.copy()
+
+toclen = len(toc)
+
+nested_array=[]
+for i in range(toclen):
+    o = toc[i]
+    n=toc[i]["level"]
+    #print("n=toc[i][\"level\"]:: i,n ::"+str(i)+","+str(n))
+    index=""
+    arr1 = None
+    for j in range(0,n):
+        #print("i,j ::::"+str(i)+","+str(j))
+        if arr1 is None:
+            arr1 = nested_array
+        else:
+            len_arr1 = len(arr1)
+            if isinstance(arr1[len_arr1-1], list):
+                arr1=arr1[len_arr1-1]
+            else:
+                arr1.append([])
+                len_arr1 = len(arr1)
+                arr1=arr1[len_arr1-1]
+    arr1.append(o)
+
+import json
+print("nested_array == "+json.dumps(nested_array, indent=4, sort_keys=True, default=str))
+```
+
+**STEP3: Using Combined.pdf and Total nested array of outline create Combined.pdf with toc**
+
+```
+from PyPDF2 import PdfFileWriter, PdfFileReader
+combinedfile="Combined.pdf"
+output = PdfFileWriter()
+input1 = PdfFileReader(open(combinedfile, 'rb'))
+
+for pageno in range(input1.getNumPages()):
+    print("(Using page: "+str(pageno+1)+")")
+    output.addPage(input1.getPage(pageno-1))
+
+def _write_bookmarks(bookmarks=None, parent=None):
+    last_added = None
+    for b in bookmarks:
+        if isinstance(b, list):
+            _write_bookmarks(b, last_added)
+            continue
+        last_added = output.addBookmark(b["/Title"], b["/Page"]-1,parent)
+
+_write_bookmarks(nested_array)
+
+# get filename from combinedfile.pdf
+# os.path.splitext(combinedfile)[0]
+
+#get (ext).pdf from combinedfile.pdf
+# os.path.splitext(combinedfile)[1]
+
+import os
+outputfile = open(os.path.splitext(combinedfile)[0]+"_indexed"+os.path.splitext(combinedfile)[1], 'wb')
+output.write(outputfile)
+```
+
+Now we have `Combined_indexed.pdf` with the toc
