@@ -1,4 +1,4 @@
-# Stapler to combine large pdfs
+# Customize Stapler to be more verbose while combine large pdfs
 
 Stapler uses python2
 
@@ -109,3 +109,28 @@ def select(args, inverse=False):
         if debug: print((data, "TYPE", data.__class__.__name__))
 ```
 
+**AFTER CHANGES THE OUTPUT WILL BE**
+```bash
+# stapler --verbose cat File1.pdf File2.pdf File3.pdf File4.pdf ALL.pdf
+File: File1.pdf Using page: 13489 (rotation: 0 deg.)
+File: File1.pdf Using page: 13490 (rotation: 0 deg.)
+File: File1.pdf Using page: 13491 (rotation: 0 deg.)
+File: File1.pdf Using page: 13492 (rotation: 0 deg.)
+File: File1.pdf Using page: 13493 (rotation: 0 deg.)
+...
+52351/52358 :: def write: for objIndex in range(len(self._objects)): 
+52352/52358 :: def write: for objIndex in range(len(self._objects)): 
+52353/52358 :: def write: for objIndex in range(len(self._objects)): 
+52354/52358 :: def write: for objIndex in range(len(self._objects)): 
+52355/52358 :: def write: for objIndex in range(len(self._objects)): 
+52356/52358 :: def write: for objIndex in range(len(self._objects)): 
+52357/52358 :: def write: for objIndex in range(len(self._objects)): 
+...
+47000 / 52358for i in range(len(self._objects)):: 
+48000 / 52358for i in range(len(self._objects)):: 
+49000 / 52358for i in range(len(self._objects)):: 
+50000 / 52358for i in range(len(self._objects)):: 
+51000 / 52358for i in range(len(self._objects)):: 
+52000 / 52358for i in range(len(self._objects)):: 
+
+```
