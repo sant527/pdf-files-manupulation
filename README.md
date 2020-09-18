@@ -14,7 +14,6 @@
       * [STEP1: Combine the pdfs using stapler**](#step1-combine-the-pdfs-using-stapler)
       * [STEP2: Get the combined nested toc/outline python array**](#step2-get-the-combined-nested-tocoutline-python-array)
       * [STEP3: Using Combined.pdf and Total nested array of outline create Combined.pdf with toc**](#step3-using-combinedpdf-and-total-nested-array-of-outline-create-combinedpdf-with-toc)
-
 # COMBINE LARGE PDFS USING STAPLER
 ## Customize Stapler to be more verbose while combine large pdfs
 
@@ -588,6 +587,8 @@ Now we want a `Combined.pdf` with the `toc/outline` also combined
 
 ## STEP2: Get the combined nested toc/outline python array**
 
+Note: Update Bookmark pagenumbers: We have to add the add up page numbers of previous files total to the bookmarks
+
 ```python
 import fitz
 # STEP A: GET THE FLATTENED TOTAL OUTLINES
@@ -598,11 +599,17 @@ fileslist=[
     "File4.pdf",
 ]
 
+# combining toc and also updating the bookmark page number
 outlines=[]
 total_pages=0
 for i in range(len(fileslist))
     doc = fitz.open(fileslist[i])  # open file
-    outlines = outlines + doc.getToC(False)
+    toc = doc.getToC(False)
+    new_toc=[]
+    for line in toc:  # read TOC to update its page numbers
+        line[2] = line[2] + total_pages  # add total page count to this page number
+        new_toc.append(line)
+    outlines = outlines + new_toc
     total_pages = total_pages + len(doc)
 
 new_format=[]
@@ -643,7 +650,7 @@ print("nested_array == "+json.dumps(nested_array, indent=4, sort_keys=True, defa
 
 ## STEP3: Using Combined.pdf and Total nested array of outline create Combined.pdf with toc**
 
-```
+```python
 from PyPDF2 import PdfFileWriter, PdfFileReader
 combinedfile="Combined.pdf"
 output = PdfFileWriter()
