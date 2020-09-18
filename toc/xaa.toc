@@ -15,3 +15,5 @@
       * [STEP2: Get the combined nested toc/outline python array**](#step2-get-the-combined-nested-tocoutline-python-array)
       * [STEP3: Using Combined.pdf and Total nested array of outline create Combined.pdf with toc**](#step3-using-combinedpdf-and-total-nested-array-of-outline-create-combinedpdf-with-toc)
    * [COMBINED CODE FOR MULTIPLE PDFS WITH TOC](#combined-code-for-multiple-pdfs-with-toc)
+      * [SEPERATE](#seperate)
+      * [AS BASH FILE](#as-bash-file)
