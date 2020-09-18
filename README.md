@@ -273,6 +273,7 @@ print(new_format)
 
 ### STEP2: Convert toc from flatten format to the format of PyPDF2 (i.e nested array)
 
+We want to convert the mupdf toc output the below nested array output
 ```
 [
     {
@@ -432,7 +433,7 @@ output.write(outputfile)
 ```
 
 **COMBINED**
-```
+```python
 import fitz
 filename="Adi_index.pdf"
 doc = fitz.open(filename)  # open file
