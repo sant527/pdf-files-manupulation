@@ -43,6 +43,20 @@ def select(args, inverse=False):
 ```
 **MODIFY SOURCE CODE OF PyPDF2 python2**
 
+Stapler uses python 2 libraries
+
+To find out the location of PyPDF2 in python2 do the following
+```
+$ python2
+Python 2.7.16 (default, Mar 11 2019, 18:59:25) 
+[GCC 8.2.1 20181127] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import PyPDF2
+>>> PyPDF2.__file__
+'/usr/lib/python2.7/site-packages/PyPDF2/__init__.py'
+>>> 
+```
+
 `/usr/lib/python2.7/site-packages/PyPDF2/pdf.py`
 ```python
     def write(self, stream):
@@ -145,6 +159,25 @@ File: File1.pdf Using page: 13493 (rotation: 0 deg.)
 ```
 
 # Changes in source code of PyPDF2 for python3:
+
+Note: We have done changes in PyPDF of python2 i.e at '/usr/lib/python2.7/site-packages/PyPDF2/__init__.py'
+
+Now here we have to do the same in PyPDF of python3 i.e at '/usr/lib/python3.7/site-packages/PyPDF2/__init__.py'
+
+To the get the path of PyPdf2 in python do
+```
+$ python
+Python 3.7.3 (default, Mar 26 2019, 21:43:19) 
+[GCC 8.2.1 20181127] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import PyPDF2
+>>> PyPDF2.__file__
+'/usr/lib/python3.7/site-packages/PyPDF2/__init__.py'
+>>> 
+```
+
+Because the `import PyPDF2` in default python files will be to '/usr/lib/python3.7/site-packages/PyPDF2/__init__.py'
+
 
 `/usr/lib/python3.7/site-packages/PyPDF2/pdf.py`
 ```python
